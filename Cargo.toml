@@ -9,10 +9,10 @@ license = "MPL-2.0"
 edition = "2018"
 
 [features]
-backend-tokio = [ "tokio", "openssl", "tokio-openssl" ]
+backend-tokio = ["tokio", "openssl", "tokio-openssl"]
 
-util = [ "simplelog", "backend-tokio", "anyhow", "hex" ]
-default = [ "backend-tokio", "util" ]
+util = ["simplelog", "backend-tokio", "anyhow", "hex"]
+default = ["backend-tokio", "util"]
 
 [dependencies]
 
@@ -24,7 +24,7 @@ log = "0.4.14"
 url = "2.2.0"
 async-trait = "0.1.42"
 
-tokio = { version = "1.1.1", features = [ "full" ], optional = true }
+tokio = { version = "1.1.1", features = ["full"], optional = true }
 openssl = { version = "0.10.32", optional = true }
 tokio-openssl = { version = "0.6.1", optional = true }
 
@@ -45,4 +45,4 @@ simplelog = "0.9.0"
 [[bin]]
 name = "coap-client"
 path = "src/util.rs"
-required-features = [ "util" ]
+required-features = ["util"]
