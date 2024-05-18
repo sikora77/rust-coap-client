@@ -93,11 +93,7 @@ impl Tokio {
 
 			let mut ack = Packet::new();
 			ack.header.message_id = packet.header.message_id;
-<<<<<<< HEAD
 			ack.header.code = MessageClass::Empty;
-=======
-			ack.header.code = MessageClass::Response(ResponseType::Content);
->>>>>>> 819af170f13063aa632f98f00e2a2029278e3d32
 			ack.header.set_type(MessageType::Acknowledgement);
 			ack.set_token(packet.get_token().to_vec());
 
@@ -258,13 +254,10 @@ impl Tokio {
 		register.set_token(token.to_le_bytes().to_vec());
 
 		let res = resource.trim_start_matches("/");
-<<<<<<< HEAD
 		for path in res.split('/').into_iter() {
 			register.add_option(CoapOption::UriPath, path.as_bytes().to_vec());
 		}
-=======
 		register.add_option(CoapOption::UriPath, res.as_bytes().to_vec());
->>>>>>> 819af170f13063aa632f98f00e2a2029278e3d32
 		register.set_observe_value(ObserveOption::Register as u32);
 
 		// Execute register command
@@ -283,7 +276,6 @@ impl Tokio {
 				// https://tools.ietf.org/html/rfc7641#section-3.1
 				let obs = v.get_observe_value();
 				debug!("Observe response {:?}: {:02x?}", v.header.code, obs);
-<<<<<<< HEAD
 				if (obs.is_some() || v.header.code == MessageClass::Response(ResponseType::Content))
 					&& v.header.code != MessageClass::Response(ResponseType::NotFound)
 				{
@@ -390,113 +382,6 @@ impl Tokio {
 			Err(_) => self._listener.abort(),
 		}
 
-=======
-
-				if obs.is_some() || v.header.code == MessageClass::Response(ResponseType::Content) {
-					debug!("Registered observer!");
-
-					// TODO: Forward response if it's valid GET data
-
-					Ok((token, rx))
-				} else {
-					debug!("Server refused observe request");
-					let _ = ctl_tx.send(Ctl::Deregister(token)).await;
-					Err(Error::new(
-						ErrorKind::ConnectionRefused,
-						"Observe request refused",
-					))
-				}
-			}
-			Ok(None) => {
-				debug!("Timeout registering observer");
-				let _ = ctl_tx.send(Ctl::Deregister(token)).await;
-				Err(Error::new(ErrorKind::TimedOut, "Request timed out"))
-			}
-			Err(e) => {
-				debug!("Error registering ovbserver: {:?}", e);
-				let _ = ctl_tx.send(Ctl::Deregister(token)).await;
-				Err(e)
-			}
-		}
-	}
-
-	async fn do_unobserve(
-		ctl_tx: Sender<Ctl>,
-		token: u32,
-		resource: String,
-		mut rx: Receiver<Packet>,
-	) -> Result<(), Error> {
-		debug!("Deregister observer: {:x}", token);
-
-		// Send de-register command
-		// Note this is not -technically- required as the next observe
-		// response will prompt a Reset, however, it's nice to do
-		// https://tools.ietf.org/html/rfc7641#section-3.6
-
-		let mut deregister = Packet::new();
-		deregister.header.message_id = rand::random();
-		deregister.header.code = MessageClass::Request(RequestType::Get);
-		deregister.header.set_type(MessageType::Confirmable);
-		deregister.set_token(token.to_le_bytes().to_vec());
-
-		let res = resource.trim_start_matches("/");
-		deregister.add_option(CoapOption::UriPath, res.as_bytes().to_vec());
-		deregister.set_observe_value(ObserveOption::Deregister as u32);
-
-		// Send de-register with retries
-		let resp = Self::do_send_retry(
-			ctl_tx.clone(),
-			&mut rx,
-			deregister,
-			RequestOptions::default(),
-		)
-		.await;
-
-		debug!("Deregister response: {:?}", resp);
-
-		match resp {
-			Ok(Some(v)) => {
-				debug!("Deregister response: {:?}", v);
-
-				match v.header.code {
-					MessageClass::Response(s) if !status_is_ok(s) => {
-						debug!("Deregister error (code: {:?})", s);
-						// TODO: propagate error
-					}
-					_ => {
-						debug!("Deregister OK!");
-					}
-				}
-			}
-			Ok(None) => {
-				debug!("Deregister request timed out");
-			}
-			Err(e) => {
-				debug!("Error sending deregister request: {:?}", e);
-			}
-		}
-
-		// De-register local handler
-		if let Err(e) = ctl_tx.try_send(Ctl::Deregister(token)) {
-			debug!("Error sending deregister command: {:?}", e)
-		}
-
-		Ok(())
-	}
-
-	/// Close the CoAP client
-	pub async fn close(self) -> Result<(), Error> {
-		// TODO: disable observations when supported?
-
-		// Send exit command
-		match self.ctl_tx.send(Ctl::Exit).await {
-			Ok(_) => {
-				self._listener.await??;
-			}
-			Err(_) => self._listener.abort(),
-		}
-
->>>>>>> 819af170f13063aa632f98f00e2a2029278e3d32
 		Ok(())
 	}
 }
